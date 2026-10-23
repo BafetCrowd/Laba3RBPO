@@ -1,0 +1,526 @@
+{
+  "info": {
+    "name": "РБПО Лаба3 — театр",
+    "description": "Запустить приложение и выполнить всю коллекцию через Run. Даты и id заполняются автоматически. После проверки созданные записи удаляются. Тестовые данные приложения сохраняются.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{"key": "baseUrl", "value": "http://localhost:8082"}],
+  "item": [
+    {
+      "name": "1. Создать данные и проверить чтение и изменение",
+      "item": [
+        {
+          "name": "01. Создать спектакль",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/plays",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"название\": \"Проверка: Ревизор\", \"длительностьМинут\": 100, \"возрастноеОграничение\": 12}"}
+          },
+          "event": [
+            {"listen": "prerequest", "script": {"exec": [
+              "const день = 24 * 60 * 60 * 1000;",
+              "pm.collectionVariables.set(\"futureStart\", new Date(Date.now() + 7 * день).toISOString().slice(0, 19));",
+              "pm.collectionVariables.set(\"pastStart\", new Date(Date.now() - 2 * день).toISOString().slice(0, 19));"
+            ]}},
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"playId\", pm.response.json().id);"
+            ]}}
+          ]
+        },
+        {
+          "name": "02. Список спектаклей",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/plays"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Получен список\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "03. Один спектакль",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/plays/{{playId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Нужная запись\", () => pm.expect(pm.response.json().id).to.equal(Number(pm.collectionVariables.get(\"playId\"))));"
+            ]}}
+          ]
+        },
+        {
+          "name": "04. Изменить спектакль",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/plays/{{playId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"длительностьМинут\": 110}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"длительностьМинут\", () => pm.expect(pm.response.json().длительностьМинут).to.equal(110));"
+            ]}}
+          ]
+        },
+        {
+          "name": "05. Создать зал",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/theatre-halls",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"название\": \"Проверка: Малый зал\", \"числоМест\": 40}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"hallId\", pm.response.json().id);"
+            ]}}
+          ]
+        },
+        {
+          "name": "06. Список залов",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/theatre-halls"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Получен список\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "07. Один зал",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/theatre-halls/{{hallId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Нужная запись\", () => pm.expect(pm.response.json().id).to.equal(Number(pm.collectionVariables.get(\"hallId\"))));"
+            ]}}
+          ]
+        },
+        {
+          "name": "08. Изменить зал",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/theatre-halls/{{hallId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"числоМест\": 60}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"числоМест\", () => pm.expect(pm.response.json().числоМест).to.equal(60));"
+            ]}}
+          ]
+        },
+        {
+          "name": "09. Создать пользователя",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"имя\": \"Никита\"}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"userId\", pm.response.json().id);"
+            ]}}
+          ]
+        },
+        {
+          "name": "10. Список пользователей",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Получен список\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "11. Один пользователь",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/{{userId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Нужная запись\", () => pm.expect(pm.response.json().id).to.equal(Number(pm.collectionVariables.get(\"userId\"))));"
+            ]}}
+          ]
+        },
+        {
+          "name": "12. Изменить пользователя",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/users/{{userId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"имя\": \"Гришин Никита\"}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"имя\", () => pm.expect(pm.response.json().имя).to.equal(\"Гришин Никита\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "13. Создать будущий показ",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/performances",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"idСпектакля\": {{playId}}, \"idЗала\": {{hallId}}, \"начало\": \"{{futureStart}}\", \"базоваяЦена\": 500}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"performanceId\", pm.response.json().id);"
+            ]}}
+          ]
+        },
+        {
+          "name": "14. Список показов",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/performances"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Получен список\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "15. Один показ",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/performances/{{performanceId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Нужная запись\", () => pm.expect(pm.response.json().id).to.equal(Number(pm.collectionVariables.get(\"performanceId\"))));"
+            ]}}
+          ]
+        },
+        {
+          "name": "16. Изменить цену показа",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/performances/{{performanceId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"базоваяЦена\": 600}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"базоваяЦена\", () => pm.expect(pm.response.json().базоваяЦена).to.equal(600));"
+            ]}}
+          ]
+        },
+        {
+          "name": "17. Создать билет с бронью",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tickets",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"idПоказа\": {{performanceId}}, \"номерМеста\": 1, \"idПользователя\": {{userId}}}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"ticketId\", pm.response.json().id);"
+            ]}}
+          ]
+        },
+        {
+          "name": "18. Список билетов",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tickets"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Получен список\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "19. Один билет",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tickets/{{ticketId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Нужная запись\", () => pm.expect(pm.response.json().id).to.equal(Number(pm.collectionVariables.get(\"ticketId\"))));"
+            ]}}
+          ]
+        },
+        {
+          "name": "20. Изменить место в брони",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/tickets/{{ticketId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"номерМеста\": 2}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"номерМеста\", () => pm.expect(pm.response.json().номерМеста).to.equal(2));"
+            ]}}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Выполнить бизнес-операции",
+      "item": [
+        {
+          "name": "21. Забронировать группе два места",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/performances/{{performanceId}}/group-booking",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"idПользователя\": {{userId}}, \"первоеМесто\": 3, \"количество\": 2}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 201\", () => pm.response.to.have.status(201));",
+              "const билеты = pm.response.json();",
+              "pm.test(\"Два билета\", () => pm.expect(билеты.length).to.equal(2));",
+              "pm.collectionVariables.set(\"groupFirstId\", билеты[0].id);",
+              "pm.collectionVariables.set(\"groupSecondId\", билеты[1].id);"
+            ]}}
+          ]
+        },
+        {
+          "name": "22. Купить одиночный билет",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tickets/{{ticketId}}/purchase"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"статус\", () => pm.expect(pm.response.json().статус).to.equal(\"КУПЛЕН\"));",
+              "pm.test(\"цена\", () => pm.expect(pm.response.json().цена).to.equal(600));"
+            ]}}
+          ]
+        },
+        {
+          "name": "23. Повторная покупка запрещена",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tickets/{{ticketId}}/purchase"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 409\", () => pm.response.to.have.status(409));"
+            ]}}
+          ]
+        },
+        {
+          "name": "24. Вернуть купленный билет",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tickets/{{ticketId}}/return"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"статус\", () => pm.expect(pm.response.json().статус).to.equal(\"ВОЗВРАЩЁН\"));",
+              "pm.test(\"суммаВозврата\", () => pm.expect(pm.response.json().суммаВозврата).to.equal(600));"
+            ]}}
+          ]
+        },
+        {
+          "name": "25. Купить один из групповых билетов",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tickets/{{groupFirstId}}/purchase"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"статус\", () => pm.expect(pm.response.json().статус).to.equal(\"КУПЛЕН\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "26. Отменить показ и его билеты",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/performances/{{performanceId}}/cancel"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"статус\", () => pm.expect(pm.response.json().статус).to.equal(\"ОТМЕНЁН\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "27. Создать прошедший показ",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/performances",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"idСпектакля\": {{playId}}, \"idЗала\": {{hallId}}, \"начало\": \"{{pastStart}}\", \"базоваяЦена\": 500}"}
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"pastPerformanceId\", pm.response.json().id);"
+            ]}}
+          ]
+        },
+        {
+          "name": "28. Завершить прошедший показ",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/performances/{{pastPerformanceId}}/complete"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"статус\", () => pm.expect(pm.response.json().статус).to.equal(\"ЗАВЕРШЁН\"));"
+            ]}}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Удалить только созданные коллекцией записи",
+      "item": [
+        {
+          "name": "29. Удалить возвращённый билет",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/tickets/{{ticketId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "30. Удалить первый отменённый билет",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/tickets/{{groupFirstId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "31. Удалить второй отменённый билет",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/tickets/{{groupSecondId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "32. Удалить отменённый показ",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/performances/{{performanceId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "33. Удалить завершённый показ",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/performances/{{pastPerformanceId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "34. Удалить пользователя",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/users/{{userId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "35. Удалить зал",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/theatre-halls/{{hallId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        },
+        {
+          "name": "36. Удалить спектакль",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/plays/{{playId}}"
+          },
+          "event": [
+            {"listen": "test", "script": {"exec": [
+              "pm.test(\"Код 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Нет тела ответа\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]}}
+          ]
+        }
+      ]
+    }
+  ]
+}
