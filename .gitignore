@@ -1,0 +1,9 @@
+target/
+.idea/
+.run/
+*.iml
+.DS_Store
+.env
+данные/
+*.mv.db
+*.trace.db
